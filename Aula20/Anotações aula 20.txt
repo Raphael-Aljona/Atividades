@@ -1,0 +1,23 @@
+Binário (Base 2)
+Utiliza apenas os dígitos 0 e 1.
+Cada posição representa uma potência de 2.
+Ex: 101
+1 = 1
+0 = 0
+1 = 4
+101 = 5
+
+
+
+Hexadecimal (Base 16)
+Usa os dígitos 0 a 9 e as letras A a F.
+Cada posição representa uma potência de 16.
+Muito usado para representar cores, endereços de memória e em programação.
+
+Ex: FACA
+F -> 1111
+A -> 1010
+C -> 1100
+A -> 1010
+
+1111 1010 1100 1010
