@@ -1,0 +1,40 @@
+#define farolVerde 12 
+#define farolAmarelo 11 
+#define farolVermelho 10
+#define farolDireitaVerde 9
+#define farolDireitaAmarelo 8
+#define farolDireitaVermelho 7
+
+#define tempoVermelho 5000
+#define tempoAmarelo 2000
+#define tempoVerde 3000
+
+void setup() 
+{
+	 pinMode (farolVerde, OUTPUT);
+     pinMode (farolAmarelo, OUTPUT);
+  	 pinMode (farolVermelho, OUTPUT);
+  	 pinMode (farolDireitaVerde, OUTPUT);
+	 pinMode (farolDireitaAmarelo, OUTPUT);
+  	 pinMode (farolDireitaVermelho, OUTPUT);
+}
+
+void loop ()
+{
+	digitalWrite (farolVerde, HIGH);
+  	digitalWrite (farolDireitaVermelho, HIGH);
+      delay (tempoVerde);
+  	digitalWrite (farolVerde, LOW);
+  	digitalWrite (farolAmarelo, HIGH);
+  		delay(tempoAmarelo);
+  	digitalWrite (farolAmarelo, LOW);
+	digitalWrite (farolDireitaVermelho, LOW);
+  	digitalWrite (farolVermelho, HIGH);
+	digitalWrite (farolDireitaVerde, HIGH);
+  		delay (tempoVerde);
+  	digitalWrite (farolDireitaVerde, LOW);
+  	digitalWrite (farolDireitaAmarelo, HIGH);
+  		delay (tempoAmarelo);
+  	digitalWrite (farolDireitaAmarelo, LOW);
+  	digitalWrite (farolVermelho, LOW);
+}
