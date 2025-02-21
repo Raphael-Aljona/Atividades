@@ -1,0 +1,86 @@
+#define farolVerde 12 
+#define farolAmarelo 11 
+#define farolVermelho 10
+#define farolDireitaVerde 9
+#define farolDireitaAmarelo 8
+#define farolDireitaVermelho 7
+
+#define pedestreVerde 6
+#define pedestreVermelho 5
+#define pedestreVerdeDireita 4
+#define pedestreVemelhoDireita 3
+
+#define tempoVermelho 5000
+#define tempoAmarelo 2000
+#define tempoVerde 3000
+
+void setup() 
+{
+	 pinMode (farolVerde, OUTPUT);
+     pinMode (farolAmarelo, OUTPUT);
+  	 pinMode (farolVermelho, OUTPUT);
+  	 pinMode (farolDireitaVerde, OUTPUT);
+	 pinMode (farolDireitaAmarelo, OUTPUT);
+  	 pinMode (farolDireitaVermelho, OUTPUT);
+  
+     pinMode (pedestreVerde, OUTPUT);
+  	 pinMode (pedestreVermelho, OUTPUT);
+     pinMode (pedestreVerdeDireita, OUTPUT);
+     pinMode (pedestreVemelhoDireita, OUTPUT);
+}
+
+void loop ()
+{
+	digitalWrite (farolVerde, HIGH);
+  	digitalWrite (farolDireitaVermelho, HIGH);
+  	digitalWrite (pedestreVerdeDireita, HIGH);
+  	digitalWrite (pedestreVermelho, HIGH);
+      delay (tempoVerde);
+  	digitalWrite (farolVerde, LOW);
+  	digitalWrite (farolAmarelo, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVermelho, LOW);
+ 		delay(250);
+  	digitalWrite (pedestreVermelho, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVermelho, LOW);
+     	delay(250);
+  	digitalWrite (pedestreVermelho, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVermelho, LOW);
+ 		delay(250);
+  	digitalWrite (pedestreVermelho, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVermelho, LOW);
+     	delay(250);
+  	digitalWrite (farolAmarelo, LOW);
+	digitalWrite (farolDireitaVermelho, LOW);
+  	digitalWrite (pedestreVerdeDireita, LOW);
+  	digitalWrite (pedestreVermelho, LOW);
+  	digitalWrite (farolVermelho, HIGH);
+	digitalWrite (farolDireitaVerde, HIGH);
+  	digitalWrite (pedestreVemelhoDireita, HIGH);
+  	digitalWrite (pedestreVerde, HIGH);
+  		delay (tempoVerde);
+  	digitalWrite (farolDireitaVerde, LOW);
+  	digitalWrite (farolDireitaAmarelo, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVemelhoDireita, LOW);
+ 		delay(250);
+  	digitalWrite (pedestreVemelhoDireita, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVemelhoDireita, LOW);
+     	delay(250);
+  	digitalWrite (pedestreVemelhoDireita, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVemelhoDireita, LOW);
+ 		delay(250);
+  	digitalWrite (pedestreVemelhoDireita, HIGH);
+  		delay(250);
+  	digitalWrite (pedestreVemelhoDireita, LOW);
+     	delay(250);
+  	digitalWrite (farolDireitaAmarelo, LOW);
+  	digitalWrite (farolVermelho, LOW);
+  	digitalWrite (pedestreVemelhoDireita, LOW);
+  	digitalWrite (pedestreVerde, LOW);
+}
