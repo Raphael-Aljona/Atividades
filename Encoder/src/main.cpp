@@ -1,50 +1,122 @@
 #include <Arduino.h>
-#include <LiquidCrystal_I2C.h>
+#include <Bounce2.h>
 
-LiquidCrystal_I2C lcd(0x27, 20, 4);
+// Definições de pinos
+#define PINO_ENCODER_A 5     // Canal A (CLK) do encoder rotativo
+#define PINO_ENCODER_B 18    // Canal B (DT) do encoder rotativo
+#define PINO_BOTAO 4         // Botão embutido no encoder
 
-int CLK = 19; // CANAL A
-int DT = 18;  // CANAL B
-int SW = 23;
+// Objeto da biblioteca Bounce para tratar debounce do botão
+Bounce botaoEncoder = Bounce();
 
-// Construindo um vetor
-const int8_t tabelaTransicao[4][4] =
-{
-    //Matriz     0  1  2  3   
-/* 00 -> 0*/    { 0, -1,  1,  0}, 
-/* 01 -> 1*/    { 1,  0,  0, -1}, 
-/* 10 -> 2*/    {-1,  0,  0,  1}, 
-/* 11 -> 3*/    { 0,  1, -1,  0}
+// Protótipo da função que detecta rotação do encoder
+int detectarRotacaoEncoder(void);
 
-//  +1 horario
-//  0 parado
-// -1 antihorario
-
-//1023 Horario
-//3201 AntiHorario
+// Tabela de transição de estados do encoder rotativo
+// Cada entrada representa a direção do movimento com base no estado anterior e atual
+const int8_t tabelaTransicao[4][4] = {
+  {0, 1, -1, 0},  // de estado 0
+  {-1, 0, 0, 1},  // de estado 1
+  {1, 0, 0, -1},  // de estado 2
+  {0, -1, 1, 0}   // de estado 3
 };
 
-// Faça o encoder somar ao ir para o sentido horario e
-//  subtrair quando estiver indo para o sentido anti-horário
+void setup() {
+  pinMode(PINO_ENCODER_A, INPUT);
+  pinMode(PINO_ENCODER_B, INPUT);
+  botaoEncoder.attach(PINO_BOTAO, INPUT);
 
-void setup()
-{
-    Serial.begin(9600);
-    pinMode(CLK, INPUT);
-    pinMode(DT, INPUT);
+  Serial.begin(9600);
 }
 
-void loop()
-{
-    bool leituraCanalA = digitalRead(CLK);
-    bool leituraCanalB = digitalRead(DT);
-    int estadoAtualEncoder = (leituraCanalA << 1 | leituraCanalB);
-    static int estadoAnteriorEncoder = 3;
+void loop() {
+  // Detecta a direção da rotação: -1 anti-horário, +1 horário, 0 parado
+  int direcaoRotacao = detectarRotacaoEncoder();
 
-    static int posicao = 0;
-    posicao = (posicao + tabelaTransicao[estadoAnteriorEncoder][estadoAtualEncoder]);
+  // Atualiza o estado do botão com debounce
+  botaoEncoder.update();
 
-    Serial.println(posicao);
+  // Variável para alternar entre modos: menu de seleção ou ajuste
+  static bool modoMenuAtivo = true; // true = menu, false = ajuste
 
-    estadoAnteriorEncoder = estadoAtualEncoder;
+  // Variável que indica a posição atual do cursor no menu (0 a 3)
+  static int indiceItemMenu = 0;
+
+  // Intensidades individuais dos LEDs (0 a 100)
+  static int intensidadeLed[4] = {0, 0, 0, 0};
+
+  // Alterna entre o modo de menu e o modo de ajuste ao pressionar o botão
+  if (botaoEncoder.fell()) {
+    modoMenuAtivo = !modoMenuAtivo;
+  }
+
+  // --------------------------
+  // MODO MENU ATIVO (Seleciona o LED)
+  // --------------------------
+  if (modoMenuAtivo) {
+    if (direcaoRotacao != 0) {
+      indiceItemMenu += direcaoRotacao;
+
+      // Faz o índice circular entre 0 e 3
+      if (indiceItemMenu > 3) indiceItemMenu = 0;
+      else if (indiceItemMenu < 0) indiceItemMenu = 3;
+
+      Serial.print("Item selecionado: LED ");
+      Serial.println(indiceItemMenu + 1);
+    }
+  }
+
+  // --------------------------
+  // MODO AJUSTE ATIVO (Modifica intensidade do LED selecionado)
+  // --------------------------
+  else if (direcaoRotacao != 0) {
+    intensidadeLed[indiceItemMenu] += direcaoRotacao * 10;
+
+    // Limita a intensidade entre 0 e 100
+    if (intensidadeLed[indiceItemMenu] > 100) intensidadeLed[indiceItemMenu] = 100;
+    else if (intensidadeLed[indiceItemMenu] < 0) intensidadeLed[indiceItemMenu] = 0;
+
+    Serial.print("Intensidade do LED ");
+    Serial.print(indiceItemMenu + 1);
+    Serial.print(": ");
+    Serial.println(intensidadeLed[indiceItemMenu]);
+  }
+
+  // Aqui você pode futuramente aplicar essas intensidades com analogWrite() ou PWM.
+}
+
+
+int detectarRotacaoEncoder() {
+  // Lê o estado atual dos canais do encoder
+  bool estadoA = digitalRead(PINO_ENCODER_A);
+  bool estadoB = digitalRead(PINO_ENCODER_B);
+
+  // Junta os dois bits (A e B) em uma única variável (valores de 0 a 3)
+  int estadoAtual = (estadoA << 1) | estadoB;
+
+  static int estadoAnterior = 3;  // 3 = repouso
+  static int acumulador = 0;      // Acumula os passos do movimento
+  int resultado = 0;              // Retorna 1, -1 ou 0
+
+  // Detecta mudança de estado (movimento)
+  if (estadoAtual != estadoAnterior) {
+    // Atualiza o acumulador com base na tabela de transição
+    acumulador += tabelaTransicao[estadoAnterior][estadoAtual];
+
+    // Se o estado atual for 3 (repouso), verifica se houve rotação completa
+    if (estadoAtual == 3) {
+      if (acumulador == 4) {
+        resultado = 1; // sentido horário
+      } else if (acumulador == -4) {
+        resultado = -1; // sentido anti-horário
+      }
+
+      acumulador = 0; // zera para próxima leitura
+    }
+
+    // Atualiza o estado anterior
+    estadoAnterior = estadoAtual;
+  }
+
+  return resultado;
 }
