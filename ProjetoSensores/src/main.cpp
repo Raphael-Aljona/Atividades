@@ -1,27 +1,28 @@
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <MFRC522.h>
-#include <EEPROM.h>
 
-#define SS_PIN 5  // SDA
+#define SS_PIN 5  // SDA 
 #define RST_PIN 2 // RST
 #define hall 35
 
 #define portaLed 21
-#define alertaLed 0
+#define alertaLed 25
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
-String tagAutorizada = "14 E3 39 A7"; // Substitua pelo UID da sua tag
+String tagAutorizada = "14 E3 39 A7"; // Tag do UID
 
 void setup()
 {
   pinMode(hall, INPUT);
   pinMode(portaLed, OUTPUT);
+  pinMode(alertaLed, OUTPUT);
 
   Serial.begin(115200);
-  SPI.begin();        // Inicia o barramento SPI
-  mfrc522.PCD_Init(); // Inicia o leitor MFRC522
+  SPI.begin();
+  mfrc522.PCD_Init();
   Serial.println("Aproxime o cartão...");
 }
 
@@ -31,16 +32,17 @@ void loop()
   unsigned long duracaoAbertura = 5000;
   static bool acessoLiberado = 0;
   static int estadoPorta = 0;
+  static int estadoAnteriorPorta = -1;
   static bool estadoLed = false;
-  static unsigned long intervalo = 500; 
+  static unsigned long intervalo = 500;
   static unsigned long ultimoMillis = 0;
   unsigned long tempoAtual = millis();
 
-  int estado = digitalRead(hall);
+  int estadoHall = digitalRead(hall);
 
   if (acessoLiberado)
   {
-    if (estado == LOW)
+    if (estadoHall == LOW)
     {
       estadoPorta = 1;
     }
@@ -50,32 +52,50 @@ void loop()
     }
   }
 
-  if (estadoPorta == 1)
+  if (estadoPorta != estadoAnteriorPorta)
   {
-    Serial.println("Porta destrancada");
+    if (estadoPorta == 1)
+    {
+      Serial.println("Porta Fechada");
+    }
+    else if (estadoPorta == 2)
+    {
+      Serial.println("Porta Aberta");
+    }
+    estadoAnteriorPorta = estadoPorta;
   }
 
-  else if (estadoPorta == 2){
-     Serial.println("Porta Aberta");
-  }
+  static bool arrombamentoAnterior = false;
+  bool tentativaArrombamento = (!acessoLiberado && estadoHall == HIGH);
 
-  if (!acessoLiberado && estado == HIGH)
+  if (tentativaArrombamento)
   {
-    Serial.println("tentativa de arrombamento");
-    estadoPorta = 0;
-    if (tempoAtual - ultimoMillis >= intervalo) {
-    ultimoMillis = tempoAtual;
-    
-    estadoLed = !estadoLed;              // Inverte o estado do LED
-    digitalWrite(alertaLed, estadoLed);    // Atualiza o LED
+    if (!arrombamentoAnterior)
+    {
+      Serial.println("Tentativa de arrombamento");
+      arrombamentoAnterior = true;
+    }
+
+    if (tempoAtual - ultimoMillis >= intervalo)
+    {
+      ultimoMillis = tempoAtual;
+      estadoLed = !estadoLed;
+      digitalWrite(alertaLed, estadoLed);
+    }
   }
+  else
+  {
+    arrombamentoAnterior = false;
+    digitalWrite(alertaLed, LOW);
   }
 
-  if (acessoLiberado && (millis() - tempoAbertura >= duracaoAbertura) && estado == LOW)
+  if (acessoLiberado && (millis() - tempoAbertura >= duracaoAbertura) && estadoHall == LOW)
   {
     acessoLiberado = false;
     Serial.println("Porta Trancada");
     digitalWrite(portaLed, LOW);
+    estadoPorta = 0;
+    estadoAnteriorPorta = -1;
   }
 
   if (!mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial())
@@ -83,6 +103,7 @@ void loop()
     return;
   }
 
+  // Le e armazena a informação do ID
   String uidLido = "";
   for (byte i = 0; i < mfrc522.uid.size; i++)
   {
@@ -92,12 +113,12 @@ void loop()
   }
 
   uidLido.toUpperCase();
-  Serial.println("UID Lido: " + uidLido);
+  // Exibe o ID na serial
+  // Serial.println("UID Lido: " + uidLido); 
 
-  // Verifica acesso
   if (uidLido == tagAutorizada)
   {
-    Serial.println("Acesso Permitido ✅");
+    Serial.println("Acesso Permitido");
     digitalWrite(portaLed, HIGH);
     acessoLiberado = true;
     tempoAbertura = millis();
@@ -105,9 +126,9 @@ void loop()
   }
   else
   {
-    Serial.println("Acesso Negado ❌");
+    Serial.println("Acesso Negado");
   }
 
-  mfrc522.PICC_HaltA();
-  mfrc522.PCD_StopCrypto1();
+  mfrc522.PICC_HaltA(); // Para de ler a tag atual e libera para ler uma outra tag
+  mfrc522.PCD_StopCrypto1(); // Encerra a criptografia da comunicação entre o leitor e a tag RFID.
 }
